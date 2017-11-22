@@ -38,7 +38,7 @@ def home_index():
     return jsonify({'api_version': api_list}), 200
 
 
-@app.route("/api/v1/user", methods=['GET'])
+@app.route("/api/v1/users", methods=['GET'])
 def get_users():
     return list_users()
 
@@ -87,8 +87,8 @@ def list_user(user_id):
 
 @app.route('/api/v1/users', methods=['POST'])
 def create_user():
-    if not request.json or not 'username' in request.json or not 'email' in\
-            request.json or not 'password' in request.json:
+    if not request.json or 'username' not in request.json or 'email' not in\
+            request.json or 'password' not in request.json:
         abort(400)
     user = {
         'username': request.json['username'],
@@ -121,6 +121,63 @@ def add_user(new_user):
         conn.commit()
         return "success"
     conn.close()
+
+
+@app.route('/api/v1/users', methods=['DELETE'])
+def delete_user():
+    if not request.json or 'username' not in request.json:
+        abort(400)
+    user = request.json['username']
+    return jsonify({'status': del_user(user)}), 200
+
+
+def del_user(del_user):
+    conn = sqlite3.connect('mydb.db')
+    print("Opened database successfully")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * from users where username=? ", (del_user,))
+    data = cursor.fetchall()
+    print("Data", data)
+    if len(data) == 0:
+        abort(404)
+    else:
+        cursor.execute("delete from users where username==?", (del_user,))
+        conn.commit()
+        return "Success"
+
+
+@app.route('/api/v1/users/<int:user_id>', methods=['PUT'])
+def update_user(user_id):
+    user = {}
+    if not request.json:
+        abort(400)
+    user['id'] = user_id
+    key_list = request.json.keys()
+    for i in key_list:
+        user[i] = request.json[i]
+    print(user)
+    return jsonify({'status': upd_user(user)}), 200
+
+
+def upd_user(user):
+    conn = sqlite3.connect('mydb.db')
+    print("Opened database successfully")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * from users where id=? ", (user['id'],))
+    data = cursor.fetchall()
+    print(data)
+    if len(data) == 0:
+        abort(404)
+    else:
+        key_list = user.keys()
+        for i in key_list:
+            if i != "id":
+                print(user, i)
+                cursor.execute(
+                    """UPDATE users set {0} = ? WHERE id = ?""".format(i),
+                    (user[i], user['id']))
+                conn.commit()
+        return "Success"
 
 
 if __name__ == "__main__":
