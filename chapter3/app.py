@@ -4,6 +4,7 @@
 from flask import Flask, jsonify, request
 from flask import abort
 from flask import make_response
+from flask import render_template
 import sqlite3
 from time import strftime, gmtime
 
@@ -265,6 +266,11 @@ def list_tweet(user_id):
         user['tweet_time'] = data[0][3]
     conn.close()
     return jsonify(user)
+
+
+@app.route('/adduser')
+def adduser():
+    return render_template('adduser.html')
 
 
 if __name__ == "__main__":
