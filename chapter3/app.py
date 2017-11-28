@@ -195,15 +195,14 @@ def list_tweets():
     cursor = conn.execute("SELECT username, body, tweet_time, id from tweets")
     data = cursor.fetchall()
     print(data)
-    print(len(data))
     if data == 0:
         return api_list
     else:
         for row in data:
             tweets = {}
-            tweets['Tweet By'] = row[0]
-            tweets['Body'] = row[1]
-            tweets['Timestamp'] = row[2]
+            tweets['username'] = row[0]
+            tweets['body'] = row[1]
+            tweets['timestamp'] = row[2]
             tweets['id'] = row[3]
             api_list.append(tweets)
     conn.close()
