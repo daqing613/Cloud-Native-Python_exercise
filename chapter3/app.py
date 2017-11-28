@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect, session
 from flask import abort
-from flask import make_response
+from flask import make_response, url_for
 from flask import render_template
 import sqlite3
 from time import strftime, gmtime
+from flask_cors import CORS
 
 
 app = Flask(__name__)
+CORS(app)
 
 
 @app.errorhandler(404)
@@ -20,6 +22,26 @@ def resource_not_found(error):
 @app.errorhandler(400)
 def invalid_request(error):
     return make_response(jsonify({'error': 'Bad Request'}), 400)
+
+
+@app.route("/")
+def main():
+    return render_template('main.html')
+
+
+@app.route("/addname")
+def addname():
+    if request.args.get('yourname'):
+        session['name'] = request.args.get('yourname')
+        return redirect(url_for('main'))
+    else:
+        return render_template('addname.html', session=session)
+
+
+@app.route("/clear")
+def clearsession():
+    session.clear()
+    return redirect(url_for('main'))
 
 
 @app.route("/api/v1/info")
