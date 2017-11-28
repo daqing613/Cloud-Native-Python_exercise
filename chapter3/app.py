@@ -50,7 +50,7 @@ def list_users():
     print("Opened databases successfully")
     api_list = []
     cursor = conn.execute(
-        "SELECT username, full_name, emailid, password, id from users")
+        "SELECT username, full_name, email, password, id from users")
     for row in cursor:
         a_dict = {}
         a_dict['username'] = row[0]
@@ -106,7 +106,7 @@ def add_user(new_user):
     print("Opened database successfully")
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT * from users where username=? or emailid=?",
+        "SELECT * from users where username=? or email=?",
         (new_user['username'],
          new_user['email']))
     data = cursor.fetchall()
@@ -114,7 +114,7 @@ def add_user(new_user):
         abort(409)
     else:
         cursor.execute(
-            "insert into users (username, emailid, password, full_name)\
+            "insert into users (username, email, password, full_name)\
             values(?,?,?,?)",
             (new_user['username'],
              new_user['email'],
@@ -271,6 +271,11 @@ def list_tweet(user_id):
 @app.route('/adduser')
 def adduser():
     return render_template('adduser.html')
+
+
+@app.route('/addtweets')
+def addtweetjs():
+    return render_template('addtweets.html')
 
 
 if __name__ == "__main__":
