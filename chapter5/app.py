@@ -72,6 +72,11 @@ def main():
     return render_template('main.html')
 
 
+@app.route('/index')
+def index():
+    return render_template('index.html')
+
+
 @app.route("/addname")
 def addname():
     if request.args.get('yourname'):
