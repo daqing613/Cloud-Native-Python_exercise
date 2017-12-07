@@ -11,13 +11,16 @@ from pymongo import MongoClient
 from flask.ext.pymongo import PyMongo
 import random
 import bcrypt
+from flask.ext.mongoalchemy import MongoAlchemy
 
 
 app = Flask(__name__)
+app.secret_key = 'aaaa'
 CORS(app)
 
 connection = MongoClient("mongodb://localhost:27017/")
 
+db = MongoAlchemy()
 
 mongo = PyMongo(app)
 
@@ -80,6 +83,39 @@ def home():
         return render_template('index.html', session=session['username'])
 
 
+@app.route("/signup", methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        users = mongo.db.users
+        api_list = []
+        existing_user = users.find({'$or':
+                                    [{"username": request.form['username']},
+                                     {"email": request.form['email']}]})
+        print("the request pass is: %s" % request.form['pass'])
+        for i in existing_user:
+            api_list.append(str(i))
+        if api_list == []:
+            users.insert(
+                {"email": request.form['email'],
+                 "id": random.randint(1, 1000),
+                 "name": request.form['name'],
+                 "password": bcrypt.hashpw(
+                     request.form['pass'].encode('utf-8'),
+                     bcrypt.gensalt()),
+                 "username": request.form['username']})
+            session['username'] = request.form['username']
+            return redirect(url_for('home'))
+        return 'That user already exists'
+    else:
+        return render_template('signup.html')
+
+
+@app.route("/logout")
+def logout():
+    session['logged_in'] = False
+    return redirect(url_for('home'))
+
+
 @app.route('/index')
 def index():
     return render_template('index.html')
@@ -98,10 +134,44 @@ def do_admin_login():
                 request.form['password'].encode('utf-8'),
                 api_list[0]['password']).decode('utf-8'):
             session['logged_in'] = api_list[0]['username']
-            return 'Invalid username/password!'
-        else:
-            flash("Invalid Authentication")
+            return redirect(url_for('index'))
+        return 'Invalid username/password!'
+    else:
+        flash("Invalid Authentication")
     return 'Invalid User'
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if request.method == 'POST':
+        users = mongo.db.users
+        api_list = []
+        existing_users = users.find({"username": session['username']})
+        for i in existing_users:
+            api_list.append(str(i))
+        user = {}
+        print(api_list)
+        if api_list != []:
+            print(request.form['email'])
+            user['email'] = request.form['email']
+            user['name'] = request.form['name']
+            user['password'] = request.form['pass']
+            users.update({'username': session['username']}, {'$set': user})
+        else:
+            return 'User not found!'
+        return redirect(url_for('index'))
+    if request.method == 'GET':
+        users = mongo.db.users
+        user = []
+        print(session['username'])
+        existing_user = users.find({"username": session['username']})
+        for i in existing_user:
+            user.append(i)
+        return render_template(
+            'profile.html', name=user[0]['name'],
+            username=user[0]['username'],
+            password=user[0]['password'],
+            email=user[0]['email'])
 
 
 @app.route("/addname")
