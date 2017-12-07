@@ -1,20 +1,25 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from flask import Flask, jsonify, request, redirect, session
+from flask import Flask, jsonify, request, redirect, session, flash
 from flask import abort
 from flask import make_response, url_for
 from flask import render_template
 from time import strftime, gmtime
 from flask_cors import CORS
 from pymongo import MongoClient
+from flask.ext.pymongo import PyMongo
 import random
+import bcrypt
 
 
 app = Flask(__name__)
 CORS(app)
 
 connection = MongoClient("mongodb://localhost:27017/")
+
+
+mongo = PyMongo(app)
 
 
 def create_mongodatabase():
@@ -68,13 +73,35 @@ def invalid_request(error):
 
 
 @app.route("/")
-def main():
-    return render_template('main.html')
+def home():
+    if not session.get('logged_in'):
+        return render_template('login.html')
+    else:
+        return render_template('index.html', session=session['username'])
 
 
 @app.route('/index')
 def index():
     return render_template('index.html')
+
+
+@app.route('/login', methods=['POST'])
+def do_admin_login():
+    users = mongo.db.users
+    api_list = []
+    login_user = users.find({'username': request.form['username']})
+    for i in login_user:
+        api_list.append(i)
+    print(api_list)
+    if api_list != []:
+        if api_list[0]['password'].decode('utf-8') == bcrypt.hashpw(
+                request.form['password'].encode('utf-8'),
+                api_list[0]['password']).decode('utf-8'):
+            session['logged_in'] = api_list[0]['username']
+            return 'Invalid username/password!'
+        else:
+            flash("Invalid Authentication")
+    return 'Invalid User'
 
 
 @app.route("/addname")
