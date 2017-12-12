@@ -1,8 +1,15 @@
 import Tweet from "./components/Tweet";
 import TweetList from "./components/TweetList";
 import cookie from 'react-cookie';
+import TActions from "./actions/Tactions.jsx";
+import TStore from "./stores/TStore";
 
 
+TActions.getAllTweets();
+
+let getAppState = () =>{
+   return { tweetslist: TStore.getAll()};
+ }
 
 class Main extends React.Component{
   constructor(props){
